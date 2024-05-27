@@ -14,6 +14,12 @@
 *.VC.db
 .vscode/
 
+# Visual Studio Code Indexing Files
+*.vsidx
+
+# Add the .vs folder
+.vs/
+
 # Unity generated files
 Temp/
 Obj/
