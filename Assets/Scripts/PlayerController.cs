@@ -16,6 +16,7 @@ public class PlayerController : MonoBehaviour
     [Header("Climb Settings")]
     [SerializeField] private float climbSpeed;
     [SerializeField] private float climbEndTolerance;
+    [SerializeField] private float climbDetectionDistance;
 
     [Header("Roll Settings")]
     [SerializeField] private float rollForce;
@@ -28,8 +29,12 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float groundCheckDistance;
     [SerializeField] private LayerMask groundLayer;
 
+    [Header("MiniMap Settings")]
+    [SerializeField] private GameObject miniMapCamera;
+
     private Rigidbody rb;
     private Animator animator;
+    private ScoreManager scoreManager;
 
     private bool isGrounded;
     private bool isJumping;
@@ -46,10 +51,18 @@ public class PlayerController : MonoBehaviour
     private float currentJumpForce;
     private float wallRunTime;
 
+    private bool isSpeedBoosted = false;
+    private bool isJumpBoosted = false;
+
+    private float boostEndTime;
+    private float currentSpeedBoostMultiplier = 1f;
+    private float currentJumpBoostMultiplier = 1f;
+
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
+        scoreManager = FindObjectOfType<ScoreManager>();
     }
 
     private void Update()
@@ -69,6 +82,13 @@ public class PlayerController : MonoBehaviour
         if (isClimbing && currentWallProperties != null)
         {
             CheckIfReachedTop();
+        }
+
+        UpdateBoostStatus();
+
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            ToggleMiniMap();
         }
     }
 
@@ -98,6 +118,12 @@ public class PlayerController : MonoBehaviour
                 isNearWall = true;
             }
         }
+
+        if (collision.gameObject.name == "Destination")
+        {
+            scoreManager.AddTimeScore(CalculateTimeScore());
+            Debug.Log("Destination Reached!");
+        }
     }
 
     private void OnCollisionExit(Collision collision)
@@ -110,6 +136,11 @@ public class PlayerController : MonoBehaviour
             isNearWall = false;
             currentWallProperties = null;
         }
+    }
+
+    private void ToggleMiniMap()
+    {
+        miniMapCamera.SetActive(!miniMapCamera.activeSelf);
     }
 
     private void UpdateGroundStatus()
@@ -145,12 +176,15 @@ public class PlayerController : MonoBehaviour
     private void HandleMovement()
     {
         float moveZ = Input.GetAxis("Vertical");
-        Vector3 move = transform.forward * moveZ * maxMoveSpeed;
+        float speed = isSpeedBoosted ? maxMoveSpeed * currentSpeedBoostMultiplier : maxMoveSpeed;
+        Vector3 move = transform.forward * moveZ * speed;
         rb.velocity = new Vector3(move.x, rb.velocity.y, move.z);
-        float speed = new Vector3(move.x, 0, move.z).magnitude;
+        float animationSpeed = new Vector3(move.x, 0, move.z).magnitude;
 
-        animator.SetFloat("RunSpeed", speed);
-        animator.SetBool("IsRunning", speed > 0);
+        animator.SetFloat("RunSpeed", animationSpeed);
+        animator.SetBool("IsRunning", animationSpeed > 0);
+
+        animator.SetFloat("AnimationSpeed", speed / maxMoveSpeed);
     }
 
     private void HandleJump()
@@ -170,7 +204,7 @@ public class PlayerController : MonoBehaviour
     {
         isJumping = true;
         jumpPressTime = 0f;
-        currentJumpForce = initialJumpForce;
+        currentJumpForce = initialJumpForce * currentJumpBoostMultiplier;
         rb.velocity = new Vector3(rb.velocity.x, currentJumpForce, rb.velocity.z);
         animator.SetTrigger("Jump");
     }
@@ -180,11 +214,11 @@ public class PlayerController : MonoBehaviour
         if (Input.GetButton("Jump"))
         {
             jumpPressTime += Time.deltaTime;
-            currentJumpForce = Mathf.Min(initialJumpForce + jumpPressTime * jumpForceIncreaseRate, maxJumpForce);
+            currentJumpForce = Mathf.Min(initialJumpForce * currentJumpBoostMultiplier + jumpPressTime * jumpForceIncreaseRate, maxJumpForce * currentJumpBoostMultiplier);
             rb.velocity = new Vector3(rb.velocity.x, currentJumpForce, rb.velocity.z);
         }
 
-        if (Input.GetButtonUp("Jump") || currentJumpForce >= maxJumpForce)
+        if (Input.GetButtonUp("Jump") || currentJumpForce >= maxJumpForce * currentJumpBoostMultiplier)
         {
             isJumping = false;
         }
@@ -205,7 +239,7 @@ public class PlayerController : MonoBehaviour
     private void StartClimb()
     {
         isClimbing = true;
-        rb.velocity = new Vector3(rb.velocity.x, climbSpeed, rb.velocity.z);
+        rb.velocity = new Vector3(0, climbSpeed, 0);
         animator.SetBool("IsClimbing", true);
     }
 
@@ -221,8 +255,9 @@ public class PlayerController : MonoBehaviour
         {
             RaycastHit hit;
             Vector3 forward = transform.TransformDirection(Vector3.forward);
+            Vector3 origin = transform.position + Vector3.up * 1f;
 
-            if (Physics.Raycast(transform.position, forward, out hit, 1f))
+            if (Physics.Raycast(origin, forward, out hit, climbDetectionDistance))
             {
                 WallProperties wallProperties = hit.collider.GetComponent<WallProperties>();
 
@@ -284,6 +319,8 @@ public class PlayerController : MonoBehaviour
         }
 
         hasRolledInAir = true;
+        scoreManager.AddTrickScore(5);
+        ActivateSpeedBoost(GameManager.Instance.speedBoostMultiplier, GameManager.Instance.boostDuration);
     }
 
     private void StopRoll()
@@ -309,6 +346,8 @@ public class PlayerController : MonoBehaviour
         isWallRunning = true;
         wallRunTime = 0f;
         animator.SetBool("IsWallRunning", true);
+        scoreManager.AddTrickScore(15);
+        ActivateSpeedBoost(GameManager.Instance.speedBoostMultiplier, GameManager.Instance.boostDuration);
 
         if (Physics.Raycast(transform.position, transform.right, out RaycastHit hitRight, 1f))
         {
@@ -350,5 +389,36 @@ public class PlayerController : MonoBehaviour
     {
         isWallRunning = false;
         animator.SetBool("IsWallRunning", false);
+    }
+
+    public void ActivateSpeedBoost(float multiplier, float duration)
+    {
+        isSpeedBoosted = true;
+        currentSpeedBoostMultiplier = multiplier;
+        boostEndTime = Time.time + duration;
+    }
+
+    public void ActivateJumpBoost(float multiplier, float duration)
+    {
+        isJumpBoosted = true;
+        currentJumpBoostMultiplier = multiplier;
+        boostEndTime = Time.time + duration;
+    }
+
+    private void UpdateBoostStatus()
+    {
+        if (Time.time > boostEndTime)
+        {
+            isSpeedBoosted = false;
+            currentSpeedBoostMultiplier = 1f;
+            isJumpBoosted = false;
+            currentJumpBoostMultiplier = 1f;
+        }
+    }
+
+    private int CalculateTimeScore()
+    {
+        float totalTime = FindObjectOfType<Timer>().elapsedTime;
+        return Mathf.Max(0, 1000 - Mathf.FloorToInt(totalTime * 10));
     }
 }
