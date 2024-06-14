@@ -14,14 +14,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpForceIncreaseRate;
 
     [Header("Climb Settings")]
-    [SerializeField] private float climbSpeed;
-    [SerializeField] private float climbEndTolerance;
     [SerializeField] private float climbDetectionDistance;
+    [SerializeField] private float climbSpeed;
 
     [Header("Roll Settings")]
     [SerializeField] private float rollForce;
 
     [Header("Wall Run Settings")]
+    [SerializeField] private float wallRunDetectionDistance;
     [SerializeField] private float wallRunSpeed;
     [SerializeField] private float wallRunDuration;
 
@@ -29,118 +29,126 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float groundCheckDistance;
     [SerializeField] private LayerMask groundLayer;
 
+    [Header("Stumble Settings")]
+    [SerializeField] private float stumbleDuration;
+    [SerializeField] private float stumbleSpeedMultiplier;
+
     [Header("MiniMap Settings")]
     [SerializeField] private GameObject miniMapCamera;
 
+    private CapsuleCollider capsuleCollider;
     private Rigidbody rb;
     private Animator animator;
+    private BoostManager boostManager;
+    private Timer timer;
     private ScoreManager scoreManager;
+    private LevelComplete levelComplete;
+    private Controls controls;
 
     private bool isGrounded;
     private bool isJumping;
     private bool isClimbing;
-    private bool isNearClimbable;
-    private bool isClimbEnding;
-    private bool isRolling;
+    private bool isAirRolling;
     private bool isWallRunning;
+    private bool isNearClimbable;
     private bool isNearWall;
     private bool hasRolledInAir;
-    private WallProperties currentWallProperties;
+    private bool isStumbling = false;
+    private bool isEndClimbAnimationPlaying = false;
 
     private float jumpPressTime;
     private float currentJumpForce;
     private float wallRunTime;
-
-    private bool isSpeedBoosted = false;
-    private bool isJumpBoosted = false;
-
     private float boostEndTime;
     private float currentSpeedBoostMultiplier = 1f;
-    private float currentJumpBoostMultiplier = 1f;
+
+    private BuildingProperties currentBuildingProperties;
 
     private void Start()
     {
+        capsuleCollider = GetComponent<CapsuleCollider>();
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
+        boostManager = FindObjectOfType<BoostManager>();
+        timer = FindObjectOfType<Timer>();
         scoreManager = FindObjectOfType<ScoreManager>();
+        levelComplete = FindObjectOfType<LevelComplete>();
+        controls = FindObjectOfType<Controls>();
     }
 
     private void Update()
     {
         UpdateGroundStatus();
+        UpdateWallDetection();
+        UpdateClimbDetection();
 
-        if (!isClimbing && !isRolling && !isWallRunning)
+        if (!isClimbing && !isAirRolling && !isWallRunning && !isEndClimbAnimationPlaying)
         {
             HandleMovement();
             HandleJump();
         }
 
         HandleClimb();
-        HandleRoll();
         HandleWallRun();
 
-        if (isClimbing && currentWallProperties != null)
+        if (currentBuildingProperties != null && isClimbing)
         {
             CheckIfReachedTop();
         }
 
         UpdateBoostStatus();
 
-        if (Input.GetKeyDown(KeyCode.V))
+        if (Input.GetKeyDown(controls.controls["Boost"]) && boostManager.IsBoostFull())
+        {
+            ActivateSpeedBoost(GameManager.Instance.speedBoostMultiplier, GameManager.Instance.boostDuration);
+            boostManager.ConsumeBoost();
+        }
+
+        if (Input.GetKeyDown(controls.controls["MiniMap"]))
         {
             ToggleMiniMap();
         }
+
+        Debug.DrawRay(transform.position + Vector3.up * 1.5f, transform.forward * climbDetectionDistance, Color.green);
+        Debug.DrawRay(transform.position, transform.right * wallRunDetectionDistance, Color.blue);
+        Debug.DrawRay(transform.position, -transform.right * wallRunDetectionDistance, Color.blue);
     }
 
     private void FixedUpdate()
     {
-        if (!isClimbing && !isRolling && !isWallRunning)
+        if (!isClimbing && !isAirRolling && !isWallRunning && !isEndClimbAnimationPlaying)
         {
             HandleRotation();
         }
+
+        UpdateCapsuleColliderPosition();
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider other)
     {
-        WallProperties wallProperties = collision.gameObject.GetComponent<WallProperties>();
-
-        if (wallProperties != null)
-        {
-            currentWallProperties = wallProperties;
-
-            if (wallProperties.isClimbable)
-            {
-                isNearClimbable = true;
-            }
-
-            if (wallProperties.isWallRunnable)
-            {
-                isNearWall = true;
-            }
-        }
-
-        if (collision.gameObject.name == "Destination")
+        if (other.CompareTag("Destination"))
         {
             scoreManager.AddTimeScore(CalculateTimeScore());
-            Debug.Log("Destination Reached!");
+            ShowLevelCompleteScreen();
         }
     }
 
-    private void OnCollisionExit(Collision collision)
+    private void UpdateCapsuleColliderPosition()
     {
-        WallProperties wallProperties = collision.gameObject.GetComponent<WallProperties>();
-
-        if (wallProperties != null && wallProperties == currentWallProperties)
+        if (animator)
         {
-            isNearClimbable = false;
-            isNearWall = false;
-            currentWallProperties = null;
+            capsuleCollider.center = animator.bodyPosition - transform.position;
         }
     }
 
-    private void ToggleMiniMap()
+    private void ShowLevelCompleteScreen()
     {
-        miniMapCamera.SetActive(!miniMapCamera.activeSelf);
+        int totalScore = scoreManager.GetTotalScore();
+        float elapsedTime = timer.elapsedTime;
+        int tricks = scoreManager.GetTricksPerformed();
+        string objectsCollected = scoreManager.GetCollectablesCollected().ToString();
+
+        levelComplete.ShowLevelComplete(totalScore, elapsedTime, tricks, objectsCollected);
     }
 
     private void UpdateGroundStatus()
@@ -155,41 +163,104 @@ public class PlayerController : MonoBehaviour
 
     private bool CheckIfGrounded()
     {
-        Vector3 raycastOrigin = transform.position + Vector3.up * 0.1f;
-        float raycastDistance = groundCheckDistance;
+        Vector3 raycastOrigin = transform.position + Vector3.up * 0.2f;
+        float raycastDistance = groundCheckDistance + 0.2f;
+        RaycastHit hit;
 
-        return Physics.Raycast(raycastOrigin, Vector3.down, raycastDistance, groundLayer);
+        bool isHit = Physics.Raycast(raycastOrigin, Vector3.down, out hit, raycastDistance, groundLayer);
+        Debug.DrawRay(raycastOrigin, Vector3.down * raycastDistance, Color.red);
+
+        return isHit;
     }
 
-    private void HandleRotation()
+    private void UpdateClimbDetection()
     {
-        float turn = Input.GetAxis("Horizontal");
+        isNearClimbable = false;
 
-        if (turn != 0)
+        Vector3 origin = transform.position + Vector3.up * 1.5f;
+        Vector3 forward = transform.TransformDirection(Vector3.forward);
+
+        if (Physics.Raycast(origin, forward, out RaycastHit hit, climbDetectionDistance))
         {
-            float targetAngle = transform.eulerAngles.y + turn * rotationSpeed * Time.deltaTime;
-            Quaternion targetRotation = Quaternion.Euler(0, targetAngle, 0);
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 0.5f);
+            BuildingProperties buildingProperties = hit.collider.GetComponent<BuildingProperties>();
+
+            if (buildingProperties != null && buildingProperties.isClimbable)
+            {
+                isNearClimbable = true;
+                currentBuildingProperties = buildingProperties;
+            }
+        }
+    }
+
+    private void UpdateWallDetection()
+    {
+        isNearWall = false;
+
+        if (Physics.Raycast(transform.position, transform.right, out RaycastHit hitRight, wallRunDetectionDistance))
+        {
+            BuildingProperties buildingProperties = hitRight.collider.GetComponent<BuildingProperties>();
+
+            if (buildingProperties != null && buildingProperties.isWallRunnable)
+            {
+                isNearWall = true;
+            }
+        }
+        else if (Physics.Raycast(transform.position, -transform.right, out RaycastHit hitLeft, wallRunDetectionDistance))
+        {
+            BuildingProperties buildingProperties = hitLeft.collider.GetComponent<BuildingProperties>();
+
+            if (buildingProperties != null && buildingProperties.isWallRunnable)
+            {
+                isNearWall = true;
+            }
         }
     }
 
     private void HandleMovement()
     {
-        float moveZ = Input.GetAxis("Vertical");
-        float speed = isSpeedBoosted ? maxMoveSpeed * currentSpeedBoostMultiplier : maxMoveSpeed;
+        float moveZ = 0;
+        if (Input.GetKey(controls.controls["MoveForward"]))
+        {
+            moveZ = 1;
+        }
+        else if (Input.GetKey(controls.controls["MoveBackward"]))
+        {
+            moveZ = -1;
+        }
+
+        float speed = isStumbling ? maxMoveSpeed * stumbleSpeedMultiplier : maxMoveSpeed * currentSpeedBoostMultiplier;
         Vector3 move = transform.forward * moveZ * speed;
         rb.velocity = new Vector3(move.x, rb.velocity.y, move.z);
         float animationSpeed = new Vector3(move.x, 0, move.z).magnitude;
 
-        animator.SetFloat("RunSpeed", animationSpeed);
-        animator.SetBool("IsRunning", animationSpeed > 0);
-
+        if (isGrounded)
+        {
+            animator.SetFloat("RunSpeed", animationSpeed);
+            animator.SetBool("IsRunning", animationSpeed > 0);
+        }
+        else
+        {
+            animator.SetBool("IsRunning", false);
+        }
+        
         animator.SetFloat("AnimationSpeed", speed / maxMoveSpeed);
+    }
+
+    private void HandleRotation()
+    {
+        if (Input.GetKey(controls.controls["TurnLeft"]))
+        {
+            transform.Rotate(Vector3.up, -rotationSpeed * Time.deltaTime);
+        }
+        else if (Input.GetKey(controls.controls["TurnRight"]))
+        {
+            transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
+        }
     }
 
     private void HandleJump()
     {
-        if (isGrounded && Input.GetButtonDown("Jump"))
+        if (isGrounded && Input.GetKeyDown(controls.controls["Jump"]))
         {
             StartJump();
         }
@@ -198,27 +269,36 @@ public class PlayerController : MonoBehaviour
         {
             ContinueJump();
         }
+
+        HandleAirRoll();
     }
 
     private void StartJump()
     {
         isJumping = true;
         jumpPressTime = 0f;
-        currentJumpForce = initialJumpForce * currentJumpBoostMultiplier;
+        currentJumpForce = initialJumpForce;
         rb.velocity = new Vector3(rb.velocity.x, currentJumpForce, rb.velocity.z);
         animator.SetTrigger("Jump");
     }
 
     private void ContinueJump()
     {
-        if (Input.GetButton("Jump"))
+        if (Input.GetKey(controls.controls["Jump"]))
         {
             jumpPressTime += Time.deltaTime;
-            currentJumpForce = Mathf.Min(initialJumpForce * currentJumpBoostMultiplier + jumpPressTime * jumpForceIncreaseRate, maxJumpForce * currentJumpBoostMultiplier);
+            currentJumpForce = Mathf.Min(initialJumpForce + jumpPressTime * jumpForceIncreaseRate, maxJumpForce);
             rb.velocity = new Vector3(rb.velocity.x, currentJumpForce, rb.velocity.z);
+
+            float normalizedJumpForce = currentJumpForce / maxJumpForce;
+            float minAnimationSpeed = 0.5f;
+            float maxAnimationSpeed = 1.5f;
+            float animationSpeed = Mathf.Lerp(maxAnimationSpeed, minAnimationSpeed, normalizedJumpForce);
+
+            animator.SetFloat("JumpSpeed", animationSpeed);
         }
 
-        if (Input.GetButtonUp("Jump") || currentJumpForce >= maxJumpForce * currentJumpBoostMultiplier)
+        if (Input.GetKeyUp(controls.controls["Jump"]) || currentJumpForce >= maxJumpForce)
         {
             isJumping = false;
         }
@@ -226,7 +306,7 @@ public class PlayerController : MonoBehaviour
 
     private void HandleClimb()
     {
-        if (Input.GetButton("Climb") && isNearClimbable && IsFacingClimbable())
+        if (Input.GetKey(controls.controls["Climb"]) && isNearClimbable)
         {
             StartClimb();
         }
@@ -249,62 +329,68 @@ public class PlayerController : MonoBehaviour
         animator.SetBool("IsClimbing", false);
     }
 
-    private bool IsFacingClimbable()
-    {
-        if (isNearClimbable)
-        {
-            RaycastHit hit;
-            Vector3 forward = transform.TransformDirection(Vector3.forward);
-            Vector3 origin = transform.position + Vector3.up * 1f;
-
-            if (Physics.Raycast(origin, forward, out hit, climbDetectionDistance))
-            {
-                WallProperties wallProperties = hit.collider.GetComponent<WallProperties>();
-
-                if (wallProperties != null && wallProperties.isClimbable)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     private void CheckIfReachedTop()
     {
-        float buildingHeight = currentWallProperties.GetBuildingHeight();
-        float playerHeight = transform.position.y;
+        Vector3 origin = transform.position + Vector3.up * 2.5f;
+        Vector3 forward = transform.TransformDirection(Vector3.forward);
 
-        if (playerHeight >= currentWallProperties.transform.position.y + buildingHeight - climbEndTolerance)
+        if (Physics.Raycast(origin, forward, out RaycastHit hit, climbDetectionDistance))
         {
-            isClimbEnding = true;
-            animator.SetBool("IsClimbing", false);
-            animator.SetBool("IsClimbEnding", true);
-            animator.SetTrigger("ClimbEnd");
+            BuildingProperties buildingProperties = hit.collider.GetComponent<BuildingProperties>();
+
+            if (buildingProperties == null || !buildingProperties.isClimbable)
+            {
+                StartEndClimbAnimation();
+            }
+            else
+            {
+                animator.SetBool("IsClimbEnding", false);
+            }
         }
         else
         {
-            animator.SetBool("IsClimbEnding", false);
+            StartEndClimbAnimation();
         }
     }
 
-    private void HandleRoll()
+    private void StartEndClimbAnimation()
     {
-        if (Input.GetAxis("Horizontal") != 0 && !isGrounded && !hasRolledInAir)
+        isClimbing = false;
+        isEndClimbAnimationPlaying = true;
+        animator.SetBool("IsClimbing", false);
+        animator.SetBool("IsClimbEnding", true);
+        animator.SetTrigger("ClimbEnd");
+
+        StartCoroutine(EndClimbAnimationCoroutine());
+    }
+
+    private IEnumerator EndClimbAnimationCoroutine()
+    {
+        yield return new WaitForSeconds(1f);
+
+        Vector3 climbEndForce = transform.forward * 0.5f + transform.up * 0.2f;
+        rb.AddForce(climbEndForce, ForceMode.Impulse);
+
+        isEndClimbAnimationPlaying = false;
+        animator.SetBool("IsClimbEnding", false);
+    }
+
+    private void HandleAirRoll()
+    {
+        if (Input.GetKey(controls.controls["Jump"]) && Input.GetAxis("Horizontal") != 0 && !isGrounded && !hasRolledInAir)
         {
-            StartRoll();
+            StartAirRoll();
         }
 
         if (isGrounded)
         {
-            StopRoll();
+            StopAirRoll();
         }
     }
 
-    private void StartRoll()
+    private void StartAirRoll()
     {
-        isRolling = true;
+        isAirRolling = true;
         float direction = Input.GetAxis("Horizontal");
 
         if (direction > 0)
@@ -319,54 +405,62 @@ public class PlayerController : MonoBehaviour
         }
 
         hasRolledInAir = true;
-        scoreManager.AddTrickScore(5);
-        ActivateSpeedBoost(GameManager.Instance.speedBoostMultiplier, GameManager.Instance.boostDuration);
+        scoreManager.AddTrickScore(50);
+        boostManager.AddBoost(30f);
+
+        StartCoroutine(StopAirRollAfterDelay(0.5f));
     }
 
-    private void StopRoll()
+    private IEnumerator StopAirRollAfterDelay(float delay)
     {
-        isRolling = false;
+        yield return new WaitForSeconds(delay);
+        isAirRolling = false;
+    }
+
+    private void StopAirRoll()
+    {
+        isAirRolling = false;
     }
 
     private void HandleWallRun()
     {
-        if (Input.GetButtonDown("WallRun") && animator.GetBool("IsRunning") && isNearWall)
+        if (Input.GetKeyDown(controls.controls["WallRun"]) && animator.GetBool("IsRunning") && isNearWall)
         {
-            StartWallRun();
+            if (Physics.Raycast(transform.position, transform.right, out RaycastHit hitRight, wallRunDetectionDistance))
+            {
+                BuildingProperties buildingProperties = hitRight.collider.GetComponent<BuildingProperties>();
+
+                if (buildingProperties != null && buildingProperties.isWallRunnable)
+                {
+                    StartWallRun(1f);
+                }
+            }
+            else if (Physics.Raycast(transform.position, -transform.right, out RaycastHit hitLeft, wallRunDetectionDistance))
+            {
+                BuildingProperties buildingProperties = hitLeft.collider.GetComponent<BuildingProperties>();
+
+                if (buildingProperties != null && buildingProperties.isWallRunnable)
+                {
+                    StartWallRun(0f);
+                }
+            }
         }
 
         if (isWallRunning)
         {
             ContinueWallRun();
+            CheckWallRunEnd();
         }
     }
 
-    private void StartWallRun()
+    private void StartWallRun(float wallSide)
     {
         isWallRunning = true;
         wallRunTime = 0f;
         animator.SetBool("IsWallRunning", true);
-        scoreManager.AddTrickScore(15);
-        ActivateSpeedBoost(GameManager.Instance.speedBoostMultiplier, GameManager.Instance.boostDuration);
-
-        if (Physics.Raycast(transform.position, transform.right, out RaycastHit hitRight, 1f))
-        {
-            WallProperties wallProperties = hitRight.collider.GetComponent<WallProperties>();
-
-            if (wallProperties != null && wallProperties.isWallRunnable)
-            {
-                animator.SetFloat("WallSide", 1f);
-            }
-        }
-        else if (Physics.Raycast(transform.position, -transform.right, out RaycastHit hitLeft, 1f))
-        {
-            WallProperties wallProperties = hitLeft.collider.GetComponent<WallProperties>();
-
-            if (wallProperties != null && wallProperties.isWallRunnable)
-            {
-                animator.SetFloat("WallSide", 0f);
-            }
-        }
+        animator.SetFloat("WallSide", wallSide);
+        scoreManager.AddTrickScore(100);
+        boostManager.AddBoost(50f);
     }
 
     private void ContinueWallRun()
@@ -377,9 +471,24 @@ public class PlayerController : MonoBehaviour
         {
             float moveZ = Input.GetAxis("Vertical");
             Vector3 move = transform.forward * moveZ;
-            rb.velocity = new Vector3(rb.velocity.x, rb.velocity.y, move.z * wallRunSpeed);
+            rb.velocity = new Vector3(move.x, rb.velocity.y, move.z * wallRunSpeed);
         }
         else
+        {
+            StopWallRun();
+        }
+    }
+
+    private void CheckWallRunEnd()
+    {
+        bool wallOnRight = Physics.Raycast(transform.position, transform.right, wallRunDetectionDistance);
+        bool wallOnLeft = Physics.Raycast(transform.position, -transform.right, wallRunDetectionDistance);
+
+        if (!wallOnRight && animator.GetFloat("WallSide") == 1f)
+        {
+            StopWallRun();
+        }
+        else if (!wallOnLeft && animator.GetFloat("WallSide") == 0f)
         {
             StopWallRun();
         }
@@ -391,17 +500,31 @@ public class PlayerController : MonoBehaviour
         animator.SetBool("IsWallRunning", false);
     }
 
-    public void ActivateSpeedBoost(float multiplier, float duration)
+    public void Stumble()
     {
-        isSpeedBoosted = true;
-        currentSpeedBoostMultiplier = multiplier;
-        boostEndTime = Time.time + duration;
+        if (!isStumbling)
+        {
+            StartCoroutine(StumbleCoroutine());
+        }
     }
 
-    public void ActivateJumpBoost(float multiplier, float duration)
+    private IEnumerator StumbleCoroutine()
     {
-        isJumpBoosted = true;
-        currentJumpBoostMultiplier = multiplier;
+        isStumbling = true;
+        float endTime = Time.time + stumbleDuration;
+
+        while (Time.time < endTime)
+        {
+            // Ajouter une animation ou un effet visuel de trébuchement ici
+            yield return null;
+        }
+
+        isStumbling = false;
+    }
+
+    public void ActivateSpeedBoost(float multiplier, float duration)
+    {
+        currentSpeedBoostMultiplier = multiplier;
         boostEndTime = Time.time + duration;
     }
 
@@ -409,16 +532,43 @@ public class PlayerController : MonoBehaviour
     {
         if (Time.time > boostEndTime)
         {
-            isSpeedBoosted = false;
             currentSpeedBoostMultiplier = 1f;
-            isJumpBoosted = false;
-            currentJumpBoostMultiplier = 1f;
         }
     }
 
     private int CalculateTimeScore()
     {
         float totalTime = FindObjectOfType<Timer>().elapsedTime;
-        return Mathf.Max(0, 1000 - Mathf.FloorToInt(totalTime * 10));
+
+        if (totalTime < 60)
+        {
+            return 1000;
+        }
+        else if (totalTime < 120)
+        {
+            return 800;
+        }
+        else if (totalTime < 180)
+        {
+            return 600;
+        }
+        else if (totalTime < 240)
+        {
+            return 400;
+        }
+        else
+        {
+            return 200;
+        }
+    }
+
+    private void ToggleMiniMap()
+    {
+        miniMapCamera.SetActive(!miniMapCamera.activeSelf);
+    }
+
+    public void UpdateControlKeys(Dictionary<string, KeyCode> newControls)
+    {
+        controls.controls = newControls;
     }
 }

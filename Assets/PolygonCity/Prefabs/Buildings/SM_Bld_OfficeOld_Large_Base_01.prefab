@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 2365684}
   - component: {fileID: 64633964619069568}
   - component: {fileID: 64189287793486682}
-  - component: {fileID: -1312401643319206100}
   m_Layer: 0
   m_Name: SM_Bld_OfficeOld_Large_Base_01
   m_TagString: Untagged
@@ -130,17 +129,3 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 43120460766128900, guid: 41692fb0767ef1e4fadf962f8074545f, type: 2}
---- !u!114 &-1312401643319206100
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 194766}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a17d2da6d799a7c4f8e93ac78d605eec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  isClimbable: 1
-  isWallRunnable: 1

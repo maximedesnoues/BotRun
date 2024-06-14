@@ -8,7 +8,6 @@ public class GameManager : MonoBehaviour
 
     [Header("Boost Settings")]
     public float speedBoostMultiplier;
-    public float jumpBoostMultiplier;
     public float boostDuration;
 
     private void Awake()

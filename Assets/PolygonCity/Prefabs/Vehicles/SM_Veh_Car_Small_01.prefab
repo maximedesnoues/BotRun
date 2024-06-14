@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 444428}
   - component: {fileID: 3360222}
   - component: {fileID: 2306798}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Small_Glass
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -94,7 +94,7 @@ GameObject:
   - component: {fileID: 466274}
   - component: {fileID: 3340396}
   - component: {fileID: 2383648}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Small_SteeringW
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -178,7 +178,7 @@ GameObject:
   - component: {fileID: 3330668}
   - component: {fileID: 2309438}
   - component: {fileID: 135325112218114458}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Small_Wheel_fl
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -283,7 +283,9 @@ GameObject:
   - component: {fileID: 3335030}
   - component: {fileID: 2353994}
   - component: {fileID: 64869318390013194}
-  m_Layer: 7
+  - component: {fileID: -2913596902482287783}
+  - component: {fileID: -3451079869040483378}
+  m_Layer: 0
   m_Name: SM_Veh_Car_Small_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -384,6 +386,41 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: 5f72e1579cd001244802c30b332dae70, type: 3}
+--- !u!195 &-2913596902482287783
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 127632}
+  m_Enabled: 0
+  m_AgentTypeID: 0
+  m_Radius: 2.158218
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 3.4683683
+  m_BaseOffset: 1.7341841
+  m_WalkableMask: 16
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &-3451079869040483378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 127632}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 744c0c8a164a5754d9fee1267cc79528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  range: 20
 --- !u!1 &135354
 GameObject:
   m_ObjectHideFlags: 0
@@ -396,7 +433,7 @@ GameObject:
   - component: {fileID: 3302766}
   - component: {fileID: 2365634}
   - component: {fileID: 135734239759302560}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Small_Wheel_rr
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -500,7 +537,7 @@ GameObject:
   - component: {fileID: 427430}
   - component: {fileID: 3324750}
   - component: {fileID: 2339442}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Small_Plates
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -584,7 +621,7 @@ GameObject:
   - component: {fileID: 3316568}
   - component: {fileID: 2388652}
   - component: {fileID: 135849563264401628}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Small_Wheel_rl
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -689,7 +726,7 @@ GameObject:
   - component: {fileID: 3330578}
   - component: {fileID: 2388460}
   - component: {fileID: 135417269297940110}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Small_Wheel_fr
   m_TagString: Untagged
   m_Icon: {fileID: 0}

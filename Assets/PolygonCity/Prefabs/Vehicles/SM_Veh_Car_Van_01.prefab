@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3309948}
   - component: {fileID: 2332136}
   - component: {fileID: 135955597002397524}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_Wheel_rl
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -116,7 +116,7 @@ GameObject:
   - component: {fileID: 492474}
   - component: {fileID: 3340978}
   - component: {fileID: 2314908}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_Glass
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -200,7 +200,9 @@ GameObject:
   - component: {fileID: 3320634}
   - component: {fileID: 2369120}
   - component: {fileID: 64583076319660614}
-  m_Layer: 7
+  - component: {fileID: -4836948082618095364}
+  - component: {fileID: 7899141900395257009}
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -303,6 +305,41 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: 97982d8a36ff16f4a88f291ef2443e49, type: 3}
+--- !u!195 &-4836948082618095364
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 130278}
+  m_Enabled: 0
+  m_AgentTypeID: 0
+  m_Radius: 2.596395
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 4.0548143
+  m_BaseOffset: 2.0274072
+  m_WalkableMask: 16
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &7899141900395257009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 130278}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 744c0c8a164a5754d9fee1267cc79528, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  range: 20
 --- !u!1 &148594
 GameObject:
   m_ObjectHideFlags: 0
@@ -315,7 +352,7 @@ GameObject:
   - component: {fileID: 3375262}
   - component: {fileID: 2366218}
   - component: {fileID: 135947105273226560}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_Wheel_fl
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -420,7 +457,7 @@ GameObject:
   - component: {fileID: 3336212}
   - component: {fileID: 2398674}
   - component: {fileID: 135335051287986910}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_Wheel_rr
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -524,7 +561,7 @@ GameObject:
   - component: {fileID: 494796}
   - component: {fileID: 3362914}
   - component: {fileID: 2387664}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_SteeringW
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -607,7 +644,7 @@ GameObject:
   - component: {fileID: 466560}
   - component: {fileID: 3362126}
   - component: {fileID: 2379450}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_Door_r
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -691,7 +728,7 @@ GameObject:
   - component: {fileID: 421904}
   - component: {fileID: 3352340}
   - component: {fileID: 2371386}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_Door_l
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -775,7 +812,7 @@ GameObject:
   - component: {fileID: 452968}
   - component: {fileID: 3315978}
   - component: {fileID: 2387414}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_Door_l_Glass
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -858,7 +895,7 @@ GameObject:
   - component: {fileID: 485356}
   - component: {fileID: 3325036}
   - component: {fileID: 2351822}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_Door_r_Glass
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -942,7 +979,7 @@ GameObject:
   - component: {fileID: 3320994}
   - component: {fileID: 2313066}
   - component: {fileID: 135851072435048062}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_Wheel_fr
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1046,7 +1083,7 @@ GameObject:
   - component: {fileID: 455086}
   - component: {fileID: 3360872}
   - component: {fileID: 2394676}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: SM_Veh_Car_Van_Plates
   m_TagString: Untagged
   m_Icon: {fileID: 0}
