@@ -16,6 +16,13 @@ public class Apple : MonoBehaviour
             {
                 playerHealth.Heal(healthAmount);
 
+                ScoreManager scoreManager = FindObjectOfType<ScoreManager>();
+                
+                if (scoreManager != null)
+                {
+                    scoreManager.AddCollectable(0);
+                }
+
                 Destroy(gameObject);
             }
         }

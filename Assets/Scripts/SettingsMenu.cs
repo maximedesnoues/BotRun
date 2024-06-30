@@ -7,10 +7,12 @@ using UnityEngine.UI;
 
 public class SettingsMenu : MonoBehaviour
 {
-    // [SerializeField] private AudioMixer audioMixer;
+    [SerializeField] private AudioMixer audioMixer;
 
-    // [SerializeField] private Slider volumeSlider;
-    
+    [SerializeField] private Slider masterVolumeSlider;
+    [SerializeField] private Slider musicVolumeSlider;
+    [SerializeField] private Slider soundEffectsVolumeSlider;
+
     [SerializeField] private Dropdown resolutionsDropdown;
     [SerializeField] private Dropdown qualitiesDropdown;
 
@@ -26,15 +28,19 @@ public class SettingsMenu : MonoBehaviour
         InitializeSettings();
         ApplySettings();
 
-        // volumeSlider.onValueChanged.AddListener(delegate { UpdateSettings(); });
+        masterVolumeSlider.onValueChanged.AddListener(delegate { UpdateSettings(); });
+        musicVolumeSlider.onValueChanged.AddListener(delegate { UpdateSettings(); });
+        soundEffectsVolumeSlider.onValueChanged.AddListener(delegate { UpdateSettings(); });
         resolutionsDropdown.onValueChanged.AddListener(delegate { UpdateSettings(); });
         qualitiesDropdown.onValueChanged.AddListener(delegate { UpdateSettings(); });
     }
 
     private void InitializeSettings()
     {
-        // Initialisation du slider de volume
-        // volumeSlider.value = settingsData.volume;
+        // Initialisation des sliders de volume
+        masterVolumeSlider.value = settingsData.masterVolume;
+        musicVolumeSlider.value = settingsData.musicVolume;
+        soundEffectsVolumeSlider.value = settingsData.soundEffectsVolume;
 
         // Initialisation des différentes résolutions d'écran
         Resolution[] resolutions = Screen.resolutions;
@@ -75,7 +81,9 @@ public class SettingsMenu : MonoBehaviour
 
     public void UpdateSettings()
     {
-        // settingsData.volume = volumeSlider.value;
+        settingsData.masterVolume = masterVolumeSlider.value;
+        settingsData.musicVolume = musicVolumeSlider.value;
+        settingsData.soundEffectsVolume = soundEffectsVolumeSlider.value;
         settingsData.resolutionIndex = resolutionsDropdown.value;
         settingsData.qualityIndex = qualitiesDropdown.value;
 
@@ -85,8 +93,10 @@ public class SettingsMenu : MonoBehaviour
 
     private void ApplySettings()
     {
-        // Appliquer le volume
-        // audioMixer.SetFloat("Volume", settingsData.volume);
+        // Appliquer les volumes
+        SetVolume("MasterVolume", settingsData.masterVolume);
+        SetVolume("MusicVolume", settingsData.musicVolume);
+        SetVolume("SoundEffectsVolume", settingsData.soundEffectsVolume);
 
         // Appliquer la résolution
         Resolution resolution = Screen.resolutions[settingsData.resolutionIndex];
@@ -94,6 +104,22 @@ public class SettingsMenu : MonoBehaviour
 
         // Appliquer la qualité graphique
         QualitySettings.SetQualityLevel(settingsData.qualityIndex);
+    }
+
+    private void SetVolume(string parameter, float value)
+    {
+        float dB;
+        
+        if (value == 0)
+        {
+            dB = -80;
+        }
+        else
+        {
+            dB = Mathf.Log10(value) * 20;
+        }
+
+        audioMixer.SetFloat(parameter, dB);
     }
 
     public void SaveSettings()
@@ -115,7 +141,9 @@ public class SettingsMenu : MonoBehaviour
 [System.Serializable]
 public class SettingsData
 {
-    // public float volume;
+    public float masterVolume = 1;
+    public float musicVolume = 1;
+    public float soundEffectsVolume = 1;
     public int resolutionIndex;
     public int qualityIndex;
 }

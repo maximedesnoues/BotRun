@@ -6,6 +6,7 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Movement Settings")]
     [SerializeField] private float maxMoveSpeed;
+    [SerializeField] private float accelerationRate;
     [SerializeField] private float rotationSpeed;
 
     [Header("Jump Settings")]
@@ -62,6 +63,8 @@ public class PlayerController : MonoBehaviour
     private float boostEndTime;
     private float currentSpeedBoostMultiplier = 1f;
 
+    private float moveForwardPressTime;
+    private float moveBackwardPressTime;
     private BuildingProperties currentBuildingProperties;
 
     private void Start()
@@ -122,6 +125,11 @@ public class PlayerController : MonoBehaviour
         }
 
         UpdateCapsuleColliderPosition();
+
+        if (isGrounded)
+        {
+            rb.AddForce(Vector3.down * 30f, ForceMode.Acceleration);
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -164,7 +172,7 @@ public class PlayerController : MonoBehaviour
     private bool CheckIfGrounded()
     {
         Vector3 raycastOrigin = transform.position + Vector3.up * 0.2f;
-        float raycastDistance = groundCheckDistance + 0.2f;
+        float raycastDistance = groundCheckDistance;
         RaycastHit hit;
 
         bool isHit = Physics.Raycast(raycastOrigin, Vector3.down, out hit, raycastDistance, groundLayer);
@@ -219,35 +227,51 @@ public class PlayerController : MonoBehaviour
     private void HandleMovement()
     {
         float moveZ = 0;
+
         if (Input.GetKey(controls.controls["MoveForward"]))
         {
-            moveZ = 1;
+            moveForwardPressTime += Time.deltaTime;
+            moveZ += Mathf.Clamp(moveForwardPressTime * accelerationRate, 0, 1);
         }
-        else if (Input.GetKey(controls.controls["MoveBackward"]))
+        else
         {
-            moveZ = -1;
+            moveForwardPressTime = 0;
+        }
+
+        if (Input.GetKey(controls.controls["MoveBackward"]))
+        {
+            moveBackwardPressTime += Time.deltaTime;
+            moveZ -= Mathf.Clamp(moveBackwardPressTime * accelerationRate, 0, 1);
+        }
+        else
+        {
+            moveBackwardPressTime = 0;
         }
 
         float speed = isStumbling ? maxMoveSpeed * stumbleSpeedMultiplier : maxMoveSpeed * currentSpeedBoostMultiplier;
         Vector3 move = transform.forward * moveZ * speed;
         rb.velocity = new Vector3(move.x, rb.velocity.y, move.z);
-        float animationSpeed = new Vector3(move.x, 0, move.z).magnitude;
 
-        if (isGrounded)
+        bool isRunning = moveZ != 0;
+        animator.SetBool("IsRunning", isRunning);
+
+        if (isRunning && currentSpeedBoostMultiplier > 1f)
         {
-            animator.SetFloat("RunSpeed", animationSpeed);
-            animator.SetBool("IsRunning", animationSpeed > 0);
+            animator.SetBool("IsBoosting", true);
         }
         else
         {
-            animator.SetBool("IsRunning", false);
+            animator.SetBool("IsBoosting", false);
         }
-        
-        animator.SetFloat("AnimationSpeed", speed / maxMoveSpeed);
     }
 
     private void HandleRotation()
     {
+        if (isAirRolling)
+        {
+            return;
+        }
+
         if (Input.GetKey(controls.controls["TurnLeft"]))
         {
             transform.Rotate(Vector3.up, -rotationSpeed * Time.deltaTime);
@@ -368,7 +392,7 @@ public class PlayerController : MonoBehaviour
     {
         yield return new WaitForSeconds(1f);
 
-        Vector3 climbEndForce = transform.forward * 0.5f + transform.up * 0.2f;
+        Vector3 climbEndForce = transform.forward * 1.5f + transform.up * 0.5f;
         rb.AddForce(climbEndForce, ForceMode.Impulse);
 
         isEndClimbAnimationPlaying = false;
@@ -377,14 +401,21 @@ public class PlayerController : MonoBehaviour
 
     private void HandleAirRoll()
     {
-        if (Input.GetKey(controls.controls["Jump"]) && Input.GetAxis("Horizontal") != 0 && !isGrounded && !hasRolledInAir)
-        {
-            StartAirRoll();
-        }
-
         if (isGrounded)
         {
             StopAirRoll();
+            return;
+        }
+
+        float minHeightForAirRoll = 2.0f;
+        if (transform.position.y < minHeightForAirRoll)
+        {
+            return;
+        }
+
+        if (Input.GetKey(controls.controls["Jump"]) && Input.GetAxis("Horizontal") != 0 && !isGrounded && !hasRolledInAir)
+        {
+            StartAirRoll();
         }
     }
 
@@ -533,6 +564,7 @@ public class PlayerController : MonoBehaviour
         if (Time.time > boostEndTime)
         {
             currentSpeedBoostMultiplier = 1f;
+            animator.SetBool("IsBoosting", false);
         }
     }
 

@@ -16,6 +16,7 @@ public class MainMenu : MonoBehaviour
     public void PlayButton()
     {
         string lastUnlockedLevel = levelManager.GetLastUnlockedLevel();
+        
         if (!string.IsNullOrEmpty(lastUnlockedLevel))
         {
             sceneLoader.LoadSceneAsync(lastUnlockedLevel);

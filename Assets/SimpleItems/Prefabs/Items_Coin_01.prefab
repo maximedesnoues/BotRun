@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -119,3 +119,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   direction: {x: 0, y: 115, z: 0}
+  audioSource: {fileID: 0}
+  pickupSoundClip: {fileID: 8300000, guid: 11735eb0619d85646b42d6a1c461c777, type: 3}
+  pickupParticles: {fileID: 4752054452577589551, guid: dc6484e71c0c3de4d8b924ec03afd519, type: 3}

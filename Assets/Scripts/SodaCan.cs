@@ -16,6 +16,13 @@ public class SodaCan : MonoBehaviour
             {
                 boostManager.AddBoost(boostAmount);
 
+                ScoreManager scoreManager = FindObjectOfType<ScoreManager>();
+                
+                if (scoreManager != null)
+                {
+                    scoreManager.AddCollectable(0);
+                }
+
                 Destroy(gameObject);
             }
         }

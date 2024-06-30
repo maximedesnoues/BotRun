@@ -16,10 +16,11 @@ public class Spade : MonoBehaviour
             if (playerHealth != null)
             {
                 playerHealth.TakeDamage(damage);
-                if (playerController != null)
-                {
-                    playerController.Stumble();
-                }
+            }
+
+            if (playerController != null)
+            {
+                playerController.Stumble();
             }
         }
     }

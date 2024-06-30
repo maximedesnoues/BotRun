@@ -200,8 +200,6 @@ GameObject:
   - component: {fileID: 3334542}
   - component: {fileID: 2383878}
   - component: {fileID: 64398827108221090}
-  - component: {fileID: -4173564902833415093}
-  - component: {fileID: -9160021506017743196}
   m_Layer: 0
   m_Name: SM_Veh_Car_Muscle_01
   m_TagString: Untagged
@@ -219,7 +217,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 468440}
@@ -303,41 +301,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: 823ed423ae6ba0d4589ddb8fe51e7f14, type: 3}
---- !u!195 &-4173564902833415093
-NavMeshAgent:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 141870}
-  m_Enabled: 0
-  m_AgentTypeID: 0
-  m_Radius: 2.951476
-  m_Speed: 3.5
-  m_Acceleration: 8
-  avoidancePriority: 50
-  m_AngularSpeed: 120
-  m_StoppingDistance: 0
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
-  m_Height: 2.9871733
-  m_BaseOffset: 1.4935867
-  m_WalkableMask: 16
-  m_ObstacleAvoidanceType: 4
---- !u!114 &-9160021506017743196
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 141870}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 744c0c8a164a5754d9fee1267cc79528, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  range: 20
 --- !u!1 &166256
 GameObject:
   m_ObjectHideFlags: 0
