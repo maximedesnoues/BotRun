@@ -141,9 +141,9 @@ public class SettingsMenu : MonoBehaviour
 [System.Serializable]
 public class SettingsData
 {
-    public float masterVolume = 1;
-    public float musicVolume = 1;
-    public float soundEffectsVolume = 1;
+    public float masterVolume = 0.5f;
+    public float musicVolume = 0.5f;
+    public float soundEffectsVolume = 0.5f;
     public int resolutionIndex;
     public int qualityIndex;
 }

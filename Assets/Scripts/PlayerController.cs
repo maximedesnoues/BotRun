@@ -37,6 +37,10 @@ public class PlayerController : MonoBehaviour
     [Header("MiniMap Settings")]
     [SerializeField] private GameObject miniMapCamera;
 
+    [Header("Stumble Animations")]
+    [SerializeField] private string stumbleLeftAnimation = "StumbleLeft";
+    [SerializeField] private string stumbleRightAnimation = "StumbleRight";
+
     private CapsuleCollider capsuleCollider;
     private Rigidbody rb;
     private Animator animator;
@@ -56,6 +60,7 @@ public class PlayerController : MonoBehaviour
     private bool hasRolledInAir;
     private bool isStumbling = false;
     private bool isEndClimbAnimationPlaying = false;
+    private bool controlsEnabled = true;
 
     private float jumpPressTime;
     private float currentJumpForce;
@@ -81,6 +86,11 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (!controlsEnabled)
+        {
+            return;
+        }
+
         UpdateGroundStatus();
         UpdateWallDetection();
         UpdateClimbDetection();
@@ -119,6 +129,11 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (!controlsEnabled)
+        {
+            return;
+        }
+
         if (!isClimbing && !isAirRolling && !isWallRunning && !isEndClimbAnimationPlaying)
         {
             HandleRotation();
@@ -128,7 +143,7 @@ public class PlayerController : MonoBehaviour
 
         if (isGrounded)
         {
-            rb.AddForce(Vector3.down * 30f, ForceMode.Acceleration);
+            // rb.AddForce(Vector3.down * 30f, ForceMode.Acceleration);
         }
     }
 
@@ -139,6 +154,17 @@ public class PlayerController : MonoBehaviour
             scoreManager.AddTimeScore(CalculateTimeScore());
             ShowLevelCompleteScreen();
         }
+    }
+
+    public void EnableControls()
+    {
+        controlsEnabled = true;
+    }
+
+    public void DisableControls()
+    {
+        controlsEnabled = false;
+        rb.velocity = Vector3.zero;
     }
 
     private void UpdateCapsuleColliderPosition()
@@ -542,11 +568,14 @@ public class PlayerController : MonoBehaviour
     private IEnumerator StumbleCoroutine()
     {
         isStumbling = true;
+
+        string stumbleAnimation = Random.value > 0.5f ? stumbleLeftAnimation : stumbleRightAnimation;
+        animator.SetTrigger(stumbleAnimation);
+
         float endTime = Time.time + stumbleDuration;
 
         while (Time.time < endTime)
         {
-            // Ajouter une animation ou un effet visuel de trébuchement ici
             yield return null;
         }
 

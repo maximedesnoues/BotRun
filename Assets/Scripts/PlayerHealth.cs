@@ -12,6 +12,8 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private float invincibilityDuration;
     [SerializeField] private Renderer playerRenderer;
 
+    private PlayerController playerController;
+    private Animator animator;
     private Timer timer;
     private ScoreManager scoreManager;
     private Defeat defeat;
@@ -24,6 +26,8 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = maxHealth;
         UpdateHealthBar();
 
+        playerController = GetComponent<PlayerController>();
+        animator = GetComponent<Animator>();
         timer = FindObjectOfType<Timer>();
         scoreManager = FindObjectOfType<ScoreManager>();
         defeat = FindObjectOfType<Defeat>();
@@ -54,7 +58,7 @@ public class PlayerHealth : MonoBehaviour
         }
         else
         {
-            ShowDefeatScreen();
+            StartCoroutine(HandleDeath());
         }
     }
 
@@ -80,18 +84,19 @@ public class PlayerHealth : MonoBehaviour
         isInvincible = false;
     }
 
+    private IEnumerator HandleDeath()
+    {
+        playerController.DisableControls();
+
+        animator.SetTrigger("Death");
+
+        yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length);
+
+        defeat.ShowDefeatScreen(scoreManager.GetTotalScore(), timer.elapsedTime, scoreManager.GetTricksPerformed(), scoreManager.GetCollectablesCollected().ToString());
+    }
+
     private void UpdateHealthBar()
     {
         healthBar.SetHealth(currentHealth);
-    }
-
-    private void ShowDefeatScreen()
-    {
-        int totalScore = scoreManager.GetTotalScore();
-        float elapsedTime = timer.elapsedTime;
-        int tricks = scoreManager.GetTricksPerformed();
-        string objectsCollected = scoreManager.GetCollectablesCollected().ToString();
-
-        defeat.ShowDefeatScreen(totalScore, elapsedTime, tricks, objectsCollected);
     }
 }
