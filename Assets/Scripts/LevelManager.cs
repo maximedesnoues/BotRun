@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -6,25 +5,31 @@ using UnityEngine.UI;
 
 public class LevelManager : MonoBehaviour
 {
+    // List of level buttons in the UI
     public List<LevelButton> levelsButton;
-    
+
+    // Colors for unlocked and locked levels
     [SerializeField] private Color unlockedColor;
     [SerializeField] private Color lockedColor;
 
+    // Path to save/load level data
     private string savePath;
     private LevelsDataList levelsDataList;
     private SceneLoader sceneLoader;
 
     private void Start()
     {
+        // Set the save path and initialize the level data list
         savePath = Path.Combine(Application.persistentDataPath, "levelsData.json");
         levelsDataList = new LevelsDataList();
         sceneLoader = FindObjectOfType<SceneLoader>();
 
+        // Load and update level statuses
         LoadLevelsStatus();
         UpdateLevelsButton();
     }
 
+    // Load the status of levels from a JSON file
     private void LoadLevelsStatus()
     {
         if (File.Exists(savePath))
@@ -34,22 +39,24 @@ public class LevelManager : MonoBehaviour
         }
         else
         {
+            // Initialize level data if no save file exists
             for (int i = 0; i < levelsButton.Count; i++)
             {
                 LevelData levelData = new LevelData
                 {
                     sceneName = levelsButton[i].sceneName,
-                    isUnlocked = i == 0,
+                    isUnlocked = i == 0, // Unlock the first level by default
                     bestScore = 0,
                     bestTime = 0f
                 };
-                
+
                 levelsDataList.levels.Add(levelData);
             }
-            
-            SaveLevelsStatus();
+
+            SaveLevelsStatus(); // Save the initialized data
         }
 
+        // Update level buttons with loaded data
         for (int i = 0; i < levelsButton.Count; i++)
         {
             levelsButton[i].isUnlocked = levelsDataList.levels[i].isUnlocked;
@@ -58,6 +65,7 @@ public class LevelManager : MonoBehaviour
         }
     }
 
+    // Save the current status of levels to a JSON file
     private void SaveLevelsStatus()
     {
         for (int i = 0; i < levelsButton.Count; i++)
@@ -71,6 +79,7 @@ public class LevelManager : MonoBehaviour
         File.WriteAllText(savePath, json);
     }
 
+    // Update the appearance and functionality of level buttons based on their status
     private void UpdateLevelsButton()
     {
         for (int i = 0; i < levelsButton.Count; i++)
@@ -79,38 +88,24 @@ public class LevelManager : MonoBehaviour
             {
                 if (levelsButton[i].lockImage != null)
                 {
-                    levelsButton[i].lockImage.SetActive(false);
+                    levelsButton[i].lockImage.SetActive(false); // Hide lock icon for unlocked levels
                 }
 
                 levelsButton[i].button.image.color = unlockedColor;
                 levelsButton[i].button.interactable = true;
-                
-                if (levelsButton[i].bestScore > 0)
-                {
-                    levelsButton[i].scoreText.text = "Best Score: " + levelsButton[i].bestScore;
-                }
-                else
-                {
-                    levelsButton[i].scoreText.text = "";
-                }
 
-                if (levelsButton[i].bestTime > 0)
-                {
-                    levelsButton[i].timeText.text = "Best Time: " + FormatTime(levelsButton[i].bestTime);
-                }
-                else
-                {
-                    levelsButton[i].timeText.text = "";
-                }
+                // Display the best score and time if available
+                levelsButton[i].scoreText.text = levelsButton[i].bestScore > 0 ? "Best Score: " + levelsButton[i].bestScore : "";
+                levelsButton[i].timeText.text = levelsButton[i].bestTime > 0 ? "Best Time: " + FormatTime(levelsButton[i].bestTime) : "";
 
                 int levelIndex = i;
-                levelsButton[i].button.onClick.AddListener(() => LoadLevel(levelsButton[levelIndex].sceneName));
+                levelsButton[i].button.onClick.AddListener(() => LoadLevel(levelsButton[levelIndex].sceneName)); // Assign button action
             }
             else
             {
                 if (levelsButton[i].lockImage != null)
                 {
-                    levelsButton[i].lockImage.SetActive(true);
+                    levelsButton[i].lockImage.SetActive(true); // Show lock icon for locked levels
                 }
 
                 levelsButton[i].button.interactable = false;
@@ -119,6 +114,7 @@ public class LevelManager : MonoBehaviour
         }
     }
 
+    // Format the elapsed time into a string (mm:ss)
     private string FormatTime(float time)
     {
         int minutes = Mathf.FloorToInt(time / 60F);
@@ -126,18 +122,20 @@ public class LevelManager : MonoBehaviour
         return string.Format("{0:0}:{1:00}", minutes, seconds);
     }
 
+    // Load the specified level
     private void LoadLevel(string sceneName)
     {
         sceneLoader.LoadSceneAsync(sceneName);
     }
 
+    // Unlock the next level and update the current level's score and time
     public void UnlockNextLevel(int currentLevel, int score, float elapsedTime)
     {
         if (currentLevel < levelsButton.Count - 1)
         {
-            levelsButton[currentLevel + 1].isUnlocked = true;
+            levelsButton[currentLevel + 1].isUnlocked = true; // Unlock the next level
         }
-        
+
         if (score > levelsButton[currentLevel].bestScore)
         {
             levelsButton[currentLevel].bestScore = score;
@@ -152,6 +150,7 @@ public class LevelManager : MonoBehaviour
         UpdateLevelsButton();
     }
 
+    // Get the name of the last unlocked level
     public string GetLastUnlockedLevel()
     {
         for (int i = levelsButton.Count - 1; i >= 0; i--)
@@ -169,6 +168,7 @@ public class LevelManager : MonoBehaviour
 [System.Serializable]
 public class LevelButton
 {
+    // Data structure for each level button
     public Button button;
     public Text nameText;
     public Text scoreText;
@@ -183,6 +183,7 @@ public class LevelButton
 [System.Serializable]
 public class LevelData
 {
+    // Data structure for level information
     public string sceneName;
     public bool isUnlocked;
     public int bestScore;
@@ -192,5 +193,6 @@ public class LevelData
 [System.Serializable]
 public class LevelsDataList
 {
+    // List to hold multiple LevelData objects
     public List<LevelData> levels = new List<LevelData>();
 }

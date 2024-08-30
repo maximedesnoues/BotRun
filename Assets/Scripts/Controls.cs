@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -6,6 +5,7 @@ using UnityEngine.UI;
 
 public class Controls : MonoBehaviour
 {
+    // References to dropdowns for key bindings
     [SerializeField] private Dropdown moveForwardDropdown;
     [SerializeField] private Dropdown moveBackwardDropdown;
     [SerializeField] private Dropdown turnLeftDropdown;
@@ -16,10 +16,13 @@ public class Controls : MonoBehaviour
     [SerializeField] private Dropdown boostDropdown;
     [SerializeField] private Dropdown miniMapDropdown;
 
+    // Dictionary to store controls and their assigned key codes
     [HideInInspector] public Dictionary<string, KeyCode> controls;
 
+    // Path for saving/loading control settings
     private string savePath;
 
+    // Previous dropdown values for restoring in case of invalid changes
     private int previousMoveForwardValue;
     private int previousMoveBackwardValue;
     private int previousTurnLeftValue;
@@ -32,6 +35,7 @@ public class Controls : MonoBehaviour
 
     private void Start()
     {
+        // Set the save path and initialize default controls
         savePath = Path.Combine(Application.persistentDataPath, "controls.json");
         controls = new Dictionary<string, KeyCode>
         {
@@ -46,11 +50,14 @@ public class Controls : MonoBehaviour
             {"MiniMap", KeyCode.V}
         };
 
+        // Load and apply saved settings
         LoadSettings();
         PopulateDropdowns();
 
+        // Save initial dropdown values to handle changes
         SavePreviousDropdownValues();
 
+        // Add listeners to dropdowns for handling control changes
         moveForwardDropdown.onValueChanged.AddListener(delegate { ValidateAndSaveControls(moveForwardDropdown, ref previousMoveForwardValue); });
         moveBackwardDropdown.onValueChanged.AddListener(delegate { ValidateAndSaveControls(moveBackwardDropdown, ref previousMoveBackwardValue); });
         turnLeftDropdown.onValueChanged.AddListener(delegate { ValidateAndSaveControls(turnLeftDropdown, ref previousTurnLeftValue); });
@@ -64,12 +71,14 @@ public class Controls : MonoBehaviour
 
     private void PopulateDropdowns()
     {
+        // Populate dropdowns with all possible key codes
         List<string> options = new List<string>();
         foreach (KeyCode key in System.Enum.GetValues(typeof(KeyCode)))
         {
             options.Add(key.ToString());
         }
 
+        // Initialize each dropdown with the current key binding
         InitializeDropdown(moveForwardDropdown, options, controls["MoveForward"]);
         InitializeDropdown(moveBackwardDropdown, options, controls["MoveBackward"]);
         InitializeDropdown(turnLeftDropdown, options, controls["TurnLeft"]);
@@ -91,6 +100,7 @@ public class Controls : MonoBehaviour
 
     private void SavePreviousDropdownValues()
     {
+        // Save the current values of the dropdowns
         previousMoveForwardValue = moveForwardDropdown.value;
         previousMoveBackwardValue = moveBackwardDropdown.value;
         previousTurnLeftValue = turnLeftDropdown.value;
@@ -104,6 +114,7 @@ public class Controls : MonoBehaviour
 
     public void ValidateAndSaveControls(Dropdown changedDropdown, ref int previousValue)
     {
+        // Create a new dictionary with updated key bindings
         Dictionary<string, KeyCode> newControls = new Dictionary<string, KeyCode>
         {
             {"MoveForward", (KeyCode)System.Enum.Parse(typeof(KeyCode), moveForwardDropdown.options[moveForwardDropdown.value].text)},
@@ -117,12 +128,14 @@ public class Controls : MonoBehaviour
             {"MiniMap", (KeyCode)System.Enum.Parse(typeof(KeyCode), miniMapDropdown.options[miniMapDropdown.value].text)}
         };
 
+        // Validate that all key bindings are unique
         if (IsUnique(newControls))
         {
             controls = newControls;
             SaveSettings();
             SavePreviousDropdownValues();
 
+            // Update player controls if applicable
             PlayerController playerController = FindObjectOfType<PlayerController>();
             if (playerController != null)
             {
@@ -131,6 +144,7 @@ public class Controls : MonoBehaviour
         }
         else
         {
+            // Revert to previous value if the new control is not unique
             changedDropdown.value = previousValue;
             changedDropdown.RefreshShownValue();
         }
@@ -144,21 +158,23 @@ public class Controls : MonoBehaviour
         {
             if (!usedKeys.Add(key))
             {
-                return false;
+                return false; // Duplicate key found
             }
         }
 
-        return true;
+        return true; // All keys are unique
     }
 
     public void SaveSettings()
     {
+        // Save control settings to a JSON file
         string json = JsonUtility.ToJson(new SerializableDictionary<string, KeyCode>(controls), true);
         File.WriteAllText(savePath, json);
     }
 
     public void LoadSettings()
     {
+        // Load control settings from a JSON file, if it exists
         if (File.Exists(savePath))
         {
             string json = File.ReadAllText(savePath);
@@ -169,6 +185,7 @@ public class Controls : MonoBehaviour
 
     public void CancelSettings()
     {
+        // Revert dropdown values to previously saved settings
         PopulateDropdowns();
         SavePreviousDropdownValues();
     }
@@ -177,6 +194,7 @@ public class Controls : MonoBehaviour
 [System.Serializable]
 public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
 {
+    // Serialization fields for keys and values
     [SerializeField] private List<TKey> keys = new List<TKey>();
     [SerializeField] private List<TValue> values = new List<TValue>();
 
@@ -188,6 +206,7 @@ public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, IS
         keys.Clear();
         values.Clear();
 
+        // Serialize the dictionary into lists of keys and values
         foreach (KeyValuePair<TKey, TValue> pair in this)
         {
             keys.Add(pair.Key);
@@ -199,11 +218,13 @@ public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, IS
     {
         this.Clear();
 
+        // Ensure that the number of keys matches the number of values
         if (keys.Count != values.Count)
         {
             throw new System.Exception("There are " + keys.Count + " keys and " + values.Count + " values after deserialization. Make sure that both key and value types are serializable.");
         }
 
+        // Rebuild the dictionary from the lists of keys and values
         for (int i = 0; i < keys.Count; i++)
         {
             this.Add(keys[i], values[i]);
