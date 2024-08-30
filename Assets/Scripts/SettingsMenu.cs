@@ -143,6 +143,12 @@ public class SettingsMenu : MonoBehaviour
             string json = File.ReadAllText(savePath);
             settingsData = JsonUtility.FromJson<SettingsData>(json);
         }
+        // If the settings file doesn't exist, set default values
+        else
+        {
+            settingsData.resolutionIndex = Screen.resolutions.Length - 1;
+            settingsData.qualityIndex = QualitySettings.names.Length - 1;
+        }
     }
 }
 

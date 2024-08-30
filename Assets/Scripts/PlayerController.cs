@@ -223,6 +223,25 @@ public class PlayerController : MonoBehaviour
         if (isGrounded)
         {
             hasRolledInAir = false;
+
+            RaycastHit hit;
+            
+            // Perform a raycast slightly above the player's position to detect the ground
+            if (Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, out hit, groundCheckDistance + 0.1f, groundLayer))
+            {
+                float groundY = hit.point.y;
+                float playerY = transform.position.y;
+
+                // Apply a small tolerance to avoid frequent adjustments
+                float tolerance = 0.1f;
+
+                // Correct the player's position only if they are significantly below the ground level
+                if (playerY < groundY - tolerance)
+                {
+                    transform.position = new Vector3(transform.position.x, groundY, transform.position.z);
+                    rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z); // Reset vertical velocity to prevent bouncing
+                }
+            }
         }
     }
 
